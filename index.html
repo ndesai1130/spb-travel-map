@@ -2,305 +2,489 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPB Interactive Travel Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SPB Map">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1A2980">
+<meta name="description" content="St. Paul Biddle clinic travel time map — 28 locations across Maryland">
+
+<title>SPB Travel Map</title>
+
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231A2980'/%3E%3Ctext y='.9em' font-size='75' x='12'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231A2980'/%3E%3Ctext y='.9em' font-size='75' x='12'%3E%F0%9F%8F%A5%3C/text%3E%3C/svg%3E">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f0f2f5;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-#header{background:linear-gradient(135deg,#1A2980,#26D0CE);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:600}
-#header h1{font-size:clamp(12px,3.8vw,16px);font-weight:700;line-height:1.2}
-#header p{font-size:clamp(9px,2.2vw,11px);opacity:.8;margin-top:1px}
-#hamburger{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:6px 11px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;display:none}
-
-#layout{display:flex;flex:1;overflow:hidden;position:relative}
-#map{flex:1;height:100%;z-index:1}
-
-#panel{width:290px;background:#fff;border-left:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;z-index:400}
-
-#panel-top{padding:10px 12px;border-bottom:1px solid #eee;flex-shrink:0}
-.p-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-select.p-sel{width:100%;padding:8px 10px;border:1.5px solid #1A2980;border-radius:8px;font-size:13px;font-weight:700;color:#1A2980;background:#fff;cursor:pointer}
-select.p-sel:focus{outline:none;box-shadow:0 0 0 3px rgba(26,41,128,.12)}
-.frow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
-.fb{padding:3px 9px;border-radius:14px;border:1.5px solid;font-size:11px;font-weight:700;cursor:pointer;background:#fff;white-space:nowrap}
-.fb.on{color:#fff!important}
-.fa{border-color:#666;color:#666}.fa.on{background:#666}
-.fn{border-color:#27AE60;color:#27AE60}.fn.on{background:#27AE60}
-.fm{border-color:#E67E22;color:#E67E22}.fm.on{background:#E67E22}
-.ff{border-color:#E74C3C;color:#E74C3C}.ff.on{background:#E74C3C}
-.fv{border-color:#8E44AD;color:#8E44AD}.fv.on{background:#8E44AD}
-
-#patient-box{padding:8px 12px;border-bottom:1px solid #eee;flex-shrink:0}
-.pat-row{display:flex;gap:6px}
-.pat-row input{flex:1;padding:6px 9px;border:1.5px solid #ddd;border-radius:7px;font-size:12px;color:#333}
-.pat-row input:focus{outline:none;border-color:#1A2980}
-.pat-btn{background:#1A2980;color:#fff;border:none;border-radius:7px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
-#pat-status{font-size:10px;color:#888;margin-top:4px;display:none}
-
-#list-hdr{padding:6px 12px;background:#f8f9fa;border-bottom:1px solid #eee;font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
-#clinic-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.crow{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:.5px solid #f0f0f0;cursor:pointer}
-.crow:active{background:#f0f4ff}
-.cdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.7);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.cname{font-size:13px;font-weight:600;color:#222;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctag{font-size:11px;font-weight:700;color:#fff;padding:2px 7px;border-radius:10px;flex-shrink:0}
-
-.leg{background:#fff;border-radius:9px;padding:9px 11px;box-shadow:0 2px 8px rgba(0,0,0,.12);font-size:10px;line-height:2}
-.leg b{display:block;font-size:11px;color:#1A2980;margin-bottom:2px}
-.lrow{display:flex;align-items:center;gap:5px;color:#333}
-.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-
-.lpop .leaflet-popup-content-wrapper{border-radius:12px;padding:0;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.18)}
-.lpop .leaflet-popup-content{margin:0;min-width:230px;max-width:270px}
-.ph{background:linear-gradient(135deg,#1A2980,#26D0CE);color:#fff;padding:9px 13px}
-.ph-n{font-size:13px;font-weight:700}
-.ph-a{font-size:10px;opacity:.8;margin-top:1px}
-.pb{padding:9px 13px}
-.ptag{display:inline-block;padding:3px 9px;border-radius:11px;font-size:12px;font-weight:700;color:#fff;margin-bottom:7px}
-.pbrow{display:flex;gap:5px;margin-top:8px}
-.pba{flex:1;padding:7px 4px;border-radius:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:3px;text-decoration:none}
-.pba-g{background:#34A853;color:#fff}
-.pba-r{background:#E67E22;color:#fff}
-
-@media(max-width:600px){
-  #panel{display:none}
-  #hamburger{display:block}
-  #sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -3px 20px rgba(0,0,0,.15);z-index:800;max-height:80dvh;display:flex;flex-direction:column;transform:translateY(calc(100% - 52px));transition:transform .32s cubic-bezier(.4,0,.2,1)}
-  #sheet.up{transform:translateY(0)}
-  #sheet-handle{padding:8px 0 4px;text-align:center;cursor:pointer;flex-shrink:0}
-  #sheet-bar{width:34px;height:4px;background:#ddd;border-radius:2px;display:inline-block}
-  #sheet-title{font-size:13px;font-weight:700;color:#1A2980;padding:0 0 6px}
-  #sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 20px;flex:1}
-  .leaflet-bottom.leaflet-right{bottom:60px!important}
+:root{
+  --navy:#1A2980;--teal:#26D0CE;--green:#27AE60;--orange:#E67E22;
+  --red:#E74C3C;--purple:#8E44AD;--white:#ffffff;--bg:#f5f6fa;
+  --text:#1a1a2e;--text2:#555;--border:#e0e0e0;
 }
-@media(min-width:601px){
+
+html,body{
+  height:100%;height:100dvh;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  background:var(--bg);color:var(--text);overflow:hidden;
+}
+
+/* ── App shell ── */
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+
+/* ── Header ── */
+#hdr{
+  background:var(--navy);color:#fff;
+  padding:env(safe-area-inset-top,0) 0 0;
+  flex-shrink:0;z-index:600;
+}
+#hdr-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;
+}
+#hdr h1{font-size:clamp(13px,3.8vw,17px);font-weight:700;line-height:1.2;color:#fff}
+#hdr p{font-size:clamp(9px,2.2vw,11px);opacity:.75;margin-top:2px;color:#fff}
+#hbtn{
+  background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.35);
+  color:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;
+  cursor:pointer;display:none;align-items:center;gap:5px;white-space:nowrap;
+  flex-shrink:0;
+}
+
+/* ── A2HS banner ── */
+#a2hs{
+  background:#fff3cd;border-bottom:1px solid #ffc107;
+  padding:8px 14px;display:none;align-items:center;gap:10px;
+  font-size:12px;color:#664d03;
+}
+#a2hs button{
+  margin-left:auto;background:var(--navy);color:#fff;border:none;
+  border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;flex-shrink:0;
+}
+#a2hs-close{background:none!important;color:#664d03!important;padding:4px 6px!important;font-size:16px}
+
+/* ── Body layout ── */
+#body{display:flex;flex:1;overflow:hidden;position:relative}
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+
+/* ── Desktop sidebar ── */
+#sidebar{
+  width:300px;flex-shrink:0;background:#fff;
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;z-index:400;
+}
+
+/* ── Controls ── */
+.ctrl-block{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff}
+.ctrl-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+select.spb-sel{
+  width:100%;padding:9px 10px;border:1.5px solid var(--navy);border-radius:8px;
+  font-size:14px;font-weight:700;color:var(--navy);background:#fff;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231A2980' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;
+}
+select.spb-sel:focus{outline:none;box-shadow:0 0 0 3px rgba(26,41,128,.12)}
+
+.frow{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.fb{padding:4px 10px;border-radius:20px;border:1.5px solid;font-size:11px;font-weight:700;cursor:pointer;background:transparent;line-height:1.5;transition:all .12s}
+.fb.on{color:#fff!important}
+.fa{border-color:#555;color:#555}.fa.on{background:#555}
+.fn{border-color:var(--green);color:var(--green)}.fn.on{background:var(--green)}
+.fm{border-color:var(--orange);color:var(--orange)}.fm.on{background:var(--orange)}
+.ff{border-color:var(--red);color:var(--red)}.ff.on{background:var(--red)}
+.fv{border-color:var(--purple);color:var(--purple)}.fv.on{background:var(--purple)}
+
+/* ── Patient box ── */
+.pat-wrap{display:flex;gap:6px}
+.pat-wrap input{
+  flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;color:var(--text);background:#fff;min-width:0;
+}
+.pat-wrap input:focus{outline:none;border-color:var(--navy)}
+.pat-go{
+  background:var(--navy);color:#fff;border:none;border-radius:8px;
+  padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+}
+.pat-go:active{opacity:.85}
+#pat-res,#pat-res-m{font-size:11px;color:var(--text2);margin-top:6px;display:none;line-height:1.6}
+
+/* ── List ── */
+#list-hdr{
+  padding:6px 12px;background:#f8f9fa;border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;
+  flex-shrink:0;
+}
+#clinic-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.crow{
+  display:flex;align-items:center;gap:9px;padding:10px 12px;
+  border-bottom:.5px solid var(--border);cursor:pointer;transition:background .1s;
+}
+.crow:active,.crow:hover{background:#f0f4ff}
+.cdot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.75);box-shadow:0 1px 3px rgba(0,0,0,.22)}
+.cname{font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.ctag{font-size:11px;font-weight:700;color:#fff;padding:3px 8px;border-radius:10px;flex-shrink:0}
+
+/* ── Detail card (in sidebar) ── */
+#detail{display:none;margin:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;flex-shrink:0}
+.det-hdr{background:var(--navy);color:#fff;padding:10px 12px}
+.det-hdr h3{font-size:14px;font-weight:700;margin:0 0 2px}
+.det-hdr p{font-size:10px;opacity:.8;margin:0}
+.det-body{padding:10px 12px;background:#fff}
+.det-badge{display:inline-block;padding:3px 10px;border-radius:11px;font-size:13px;font-weight:700;color:#fff;margin-bottom:8px}
+.det-close-btn{float:right;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;margin-left:8px;flex-shrink:0}
+.near-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:.5px solid var(--border);font-size:12px}
+.near-t{font-weight:700}
+.gmap-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:9px;margin-top:10px;background:#34A853;
+  color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;
+  cursor:pointer;text-decoration:none;
+}
+.gmap-btn:active{opacity:.85}
+
+/* ── Legend ── */
+.legend{
+  padding:8px 12px;background:#f8f9fa;border-top:1px solid var(--border);
+  display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;
+}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2)}
+.leg-d{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── Popup ── */
+.spbpop .leaflet-popup-content-wrapper{border-radius:12px;padding:0;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.18)}
+.spbpop .leaflet-popup-content{margin:0;min-width:230px;max-width:270px}
+.pu-hdr{background:var(--navy);color:#fff;padding:9px 13px}
+.pu-name{font-size:13px;font-weight:700}
+.pu-addr{font-size:10px;opacity:.75;margin-top:1px}
+.pu-body{padding:9px 13px;background:#fff}
+.pu-badge{display:inline-block;padding:3px 9px;border-radius:11px;font-size:12px;font-weight:700;color:#fff;margin-bottom:6px}
+.pu-near{font-size:11px;margin-bottom:6px}
+.pu-near-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:.5px solid #f0f0f0;font-size:11px}
+.pu-gmap{display:block;padding:7px;background:#34A853;color:#fff;border-radius:7px;font-size:11px;font-weight:700;text-align:center;text-decoration:none;margin-top:8px}
+
+/* ── Mobile bottom sheet ── */
+#sheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-radius:18px 18px 0 0;
+  box-shadow:0 -3px 24px rgba(0,0,0,.16);
+  z-index:800;
+  display:none;flex-direction:column;
+  max-height:82dvh;
+  transform:translateY(calc(100% - 54px));
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+#sheet.up{transform:translateY(0)}
+#sheet-pull{padding:8px 0 2px;text-align:center;cursor:pointer;flex-shrink:0}
+#sheet-bar{width:36px;height:4px;background:#ddd;border-radius:2px;display:inline-block}
+#sheet-title{font-size:14px;font-weight:700;color:var(--navy);text-align:center;padding:2px 0 8px}
+#sheet-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 16px;flex:1}
+
+/* ── Map zoom control position on mobile ── */
+@media(max-width:620px){
+  #sidebar{display:none}
+  #hbtn{display:flex}
+  #sheet{display:flex}
+  .leaflet-bottom.leaflet-right{bottom:66px!important}
+}
+@media(min-width:621px){
   #sheet{display:none!important}
 }
+
+/* ── Empty / loading states ── */
+.empty{padding:20px 12px;text-align:center;color:#bbb;font-size:13px}
+.searching{color:var(--text2);font-size:11px}
+.err{color:var(--red);font-size:11px}
+.ok{color:var(--green);font-size:11px;font-weight:600}
 </style>
 </head>
 <body>
+<div id="app">
 
-<div id="header">
-  <div>
-    <h1>&#127973; St. Paul Biddle (SPB) Interactive Travel Map</h1>
-    <p>SPB &middot; 28 clinics across Maryland &middot; Tap a clinic to see travel times</p>
+  <!-- Header -->
+  <div id="hdr">
+    <div id="hdr-inner">
+      <div>
+        <h1>&#127973; St. Paul Biddle (SPB) Travel Map</h1>
+        <p>28 clinics across Maryland &middot; Tap a clinic for travel times</p>
+      </div>
+      <button id="hbtn" onclick="sheetToggle()">&#9776;&nbsp;Clinics</button>
+    </div>
   </div>
-  <button id="hamburger" onclick="sheetToggle()">&#9776; Clinics</button>
-</div>
 
-<div id="layout">
-  <div id="map"></div>
+  <!-- Add to Home Screen banner -->
+  <div id="a2hs">
+    <span>&#128241; Save this map to your home screen for quick access</span>
+    <button id="a2hs-install">Add to Home Screen</button>
+    <button id="a2hs-close" onclick="dismissA2HS()">&#10005;</button>
+  </div>
 
-  <div id="panel">
-    <div id="panel-top">
-      <div class="p-label">Starting clinic</div>
-      <select class="p-sel" id="selD" onchange="pickClinic(this.value)">
-        <option value="">&#8212; Select a clinic &#8212;</option>
-      </select>
-      <div class="frow">
-        <button class="fb fa on" data-k="all">All</button>
-        <button class="fb fn" data-k="near">&le;30 min</button>
-        <button class="fb fm" data-k="mod">31&ndash;60</button>
-        <button class="fb ff" data-k="far">61&ndash;90</button>
-        <button class="fb fv" data-k="vfar">90+</button>
+  <!-- Main -->
+  <div id="body">
+    <div id="map-wrap"><div id="map"></div></div>
+
+    <!-- Desktop sidebar -->
+    <div id="sidebar">
+      <div class="ctrl-block">
+        <span class="ctrl-label">Starting clinic</span>
+        <select class="spb-sel" id="selD" onchange="pick(this.value)">
+          <option value="">&#8212; Select a clinic &#8212;</option>
+        </select>
+        <div class="frow" id="frow-d"></div>
+      </div>
+      <div class="ctrl-block">
+        <span class="ctrl-label">&#128100; Patient starting location</span>
+        <div class="pat-wrap">
+          <input id="pat-d" type="text" placeholder="Address, city or zip in MD" autocomplete="off"
+            onkeydown="if(event.key==='Enter')runPat(this.value,'pat-res')"/>
+          <button class="pat-go" onclick="runPat(document.getElementById('pat-d').value,'pat-res')">Go</button>
+        </div>
+        <div id="pat-res"></div>
+      </div>
+      <div id="list-hdr">Select a clinic to see travel times</div>
+      <div id="detail"></div>
+      <div id="clinic-list"></div>
+      <div class="legend">
+        <div class="leg-i"><div class="leg-d" style="background:#27AE60"></div>&le;30 min</div>
+        <div class="leg-i"><div class="leg-d" style="background:#E67E22"></div>31&ndash;60 min</div>
+        <div class="leg-i"><div class="leg-d" style="background:#E74C3C"></div>61&ndash;90 min</div>
+        <div class="leg-i"><div class="leg-d" style="background:#8E44AD"></div>90+ min</div>
       </div>
     </div>
-    <div id="patient-box">
-      <div class="p-label">&#128100; Patient starting location</div>
-      <div class="pat-row">
-        <input id="pat-addr" type="text" placeholder="Address, city, or zip in MD" autocomplete="off" onkeydown="if(event.key==='Enter')patGo()"/>
-        <button class="pat-btn" onclick="patGo()">Go</button>
-      </div>
-      <div id="pat-status"></div>
-    </div>
-    <div id="list-hdr">Select a clinic above</div>
-    <div id="clinic-list"></div>
   </div>
 </div>
 
+<!-- Mobile bottom sheet -->
 <div id="sheet">
-  <div id="sheet-handle" onclick="sheetToggle()">
+  <div id="sheet-pull" onclick="sheetToggle()">
     <div id="sheet-bar"></div>
     <div id="sheet-title">SPB Clinics</div>
   </div>
-  <div id="sheet-body">
+  <div id="sheet-scroll">
     <div style="margin-bottom:10px">
-      <div class="p-label">Starting clinic</div>
-      <select class="p-sel" id="selM" onchange="pickClinic(this.value);sheetClose()">
+      <span class="ctrl-label">Starting clinic</span>
+      <select class="spb-sel" id="selM" onchange="pick(this.value);sheetClose()">
         <option value="">&#8212; Select a clinic &#8212;</option>
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <div class="p-label">&#128100; Patient starting location</div>
-      <div class="pat-row">
-        <input id="pat-addr-m" type="text" placeholder="Address, city, or zip in MD" autocomplete="off" onkeydown="if(event.key==='Enter')patGoM()"/>
-        <button class="pat-btn" onclick="patGoM()">Go</button>
+      <span class="ctrl-label">&#128100; Patient starting location</span>
+      <div class="pat-wrap">
+        <input id="pat-m" type="text" placeholder="Address, city or zip in MD" autocomplete="off"
+          onkeydown="if(event.key==='Enter')runPat(this.value,'pat-res-m')"/>
+        <button class="pat-go" onclick="runPat(document.getElementById('pat-m').value,'pat-res-m')">Go</button>
       </div>
-      <div id="pat-status-m"></div>
+      <div id="pat-res-m"></div>
     </div>
-    <div class="frow" style="margin-bottom:10px">
-      <button class="fb fa on" data-m="all">All</button>
-      <button class="fb fn" data-m="near">&le;30</button>
-      <button class="fb fm" data-m="mod">31&ndash;60</button>
-      <button class="fb ff" data-m="far">61&ndash;90</button>
-      <button class="fb fv" data-m="vfar">90+</button>
-    </div>
+    <div class="frow" style="margin-bottom:10px" id="frow-m"></div>
     <div id="mobile-list"></div>
   </div>
 </div>
 
 <script>
-const C={"Catonsville":{"lat":39.2723,"lng":-76.7319,"addr":"6400 Balt. Nat'l Pike Unit 280B, Baltimore, MD 21228"},"Cherry Hill":{"lat":39.2404,"lng":-76.628,"addr":"2830 S. Hanover St. Unit A-3, Baltimore, MD 21225"},"Downtown":{"lat":39.2995,"lng":-76.6156,"addr":"1130 N. Charles Street, Baltimore, MD 21201"},"Eastern Ave":{"lat":39.283,"lng":-76.5709,"addr":"3913 Eastern Avenue, Baltimore, MD 21224"},"Essex":{"lat":39.3079,"lng":-76.4739,"addr":"1201 Eastern Blvd, Baltimore, MD 21224"},"Edgewood":{"lat":39.4188,"lng":-76.2959,"addr":"1965A Pulaski Hwy, Edgewood, MD 21040"},"Belair":{"lat":39.536,"lng":-76.356,"addr":"516 Baltimore Pike, Bel Air, MD 21014"},"Ritchie Hwy":{"lat":39.1663,"lng":-76.6275,"addr":"7310 Gov. Ritchie Hwy Ste 810, Glen Burnie, MD 21061"},"Golden Ring":{"lat":39.3208,"lng":-76.5032,"addr":"7106 Ridge Rd. Ste 150, Rosedale, MD 21237"},"Greenbelt":{"lat":39.0065,"lng":-76.8754,"addr":"8717 Greenbelt Rd Ste 101, Greenbelt, MD 20770"},"Loch Raven":{"lat":39.3705,"lng":-76.5511,"addr":"2305 Cleanleight Drive, Baltimore, MD 21234"},"Owings Mills":{"lat":39.418,"lng":-76.7797,"addr":"10989 Red Run Blvd Ste 204, Owings Mills, MD 21117"},"Northwest":{"lat":39.3367,"lng":-76.693,"addr":"4149 Patterson Avenue, Baltimore, MD 21215"},"Parkville":{"lat":39.3771,"lng":-76.5381,"addr":"9403 Harford Rd Ste 3, Baltimore, MD 21234"},"Randallstown":{"lat":39.3713,"lng":-76.8019,"addr":"8043 Liberty Road, Baltimore, MD 21244"},"St. Agnes":{"lat":39.2758,"lng":-76.6765,"addr":"3454 Wilkens Avenue, Baltimore, MD 21229"},"Sinclair Lane":{"lat":39.3102,"lng":-76.5525,"addr":"5118 Sinclair Lane, Baltimore, MD 21206"},"York Rd":{"lat":39.401,"lng":-76.5993,"addr":"7801 York Road Ste 236, Towson, MD 21204"},"Laurel Place":{"lat":39.0993,"lng":-76.8583,"addr":"14405 Laurel Place Ste 102, Laurel, MD 20707"},"Columbia":{"lat":39.2157,"lng":-76.8613,"addr":"11055 Little Patuxent Pkwy #L4, Columbia, MD 21044"},"Annapolis":{"lat":38.9784,"lng":-76.5434,"addr":"1967 West St. Ste B, Annapolis, MD 21401"},"Waldorf":{"lat":38.624,"lng":-76.8879,"addr":"3165 Crain Hwy Ste 100, Waldorf, MD 20603"},"Salisbury":{"lat":38.3652,"lng":-75.5994,"addr":"1324 Belmont Ave. Ste 101, Salisbury, MD 21804"},"Rockville":{"lat":39.0839,"lng":-77.1528,"addr":"3200 Tower Oaks Blvd Ste 450, Rockville, MD 20852"},"Hagerstown":{"lat":39.6418,"lng":-77.7199,"addr":"1101 Opal Court Ste 306, Hagerstown, MD 21704"},"Frederick":{"lat":39.4143,"lng":-77.4105,"addr":"405 S. Jefferson St. Unit B, Frederick, MD 21701"},"Westminster":{"lat":39.5751,"lng":-76.9958,"addr":"540-A Jermor Lane, Westminster, MD 21157"},"Cambridge":{"lat":38.5632,"lng":-76.0788,"addr":"309 Sunburst Hwy Ste 7, Cambridge, MD 21613"}};
-const T={"Catonsville":{"Randallstown":11,"St. Agnes":13,"Cherry Hill":15,"Columbia":18,"Ritchie Hwy":19,"Northwest":19,"Sinclair Lane":23,"Owings Mills":24,"Downtown":24,"Golden Ring":26,"Eastern Ave":26,"Essex":27,"Belair":27,"Laurel Place":30,"Parkville":32,"Loch Raven":34,"York Rd":35,"Westminster":35,"Greenbelt":39,"Frederick":40,"Edgewood":48,"Rockville":48,"Annapolis":56,"Hagerstown":63,"Waldorf":80,"Cambridge":110,"Salisbury":142},"Cherry Hill":{"St. Agnes":9,"Downtown":10,"Catonsville":15,"Sinclair Lane":15,"Ritchie Hwy":18,"Eastern Ave":18,"Essex":19,"Golden Ring":19,"Parkville":19,"Randallstown":23,"Loch Raven":24,"Northwest":26,"York Rd":27,"Columbia":28,"Annapolis":29,"Owings Mills":33,"Laurel Place":36,"Belair":36,"Edgewood":40,"Greenbelt":44,"Rockville":48,"Westminster":56,"Frederick":57,"Waldorf":74,"Hagerstown":97,"Cambridge":106,"Salisbury":127},"Downtown":{"Cherry Hill":13,"St. Agnes":17,"Sinclair Lane":17,"Eastern Ave":18,"Northwest":19,"Loch Raven":19,"York Rd":20,"Catonsville":24,"Owings Mills":25,"Randallstown":25,"Essex":26,"Parkville":26,"Golden Ring":27,"Ritchie Hwy":28,"Columbia":32,"Annapolis":40,"Westminster":43,"Belair":44,"Edgewood":44,"Laurel Place":45,"Greenbelt":49,"Rockville":54,"Frederick":62,"Waldorf":86,"Hagerstown":92,"Cambridge":127,"Salisbury":150},"Eastern Ave":{"Sinclair Lane":12,"Parkville":16,"Downtown":17,"Golden Ring":18,"Cherry Hill":18,"St. Agnes":19,"Loch Raven":21,"Ritchie Hwy":23,"Catonsville":26,"Essex":27,"Northwest":30,"York Rd":31,"Edgewood":32,"Randallstown":33,"Belair":35,"Annapolis":36,"Owings Mills":37,"Columbia":37,"Laurel Place":44,"Greenbelt":51,"Rockville":54,"Westminster":59,"Waldorf":83,"Frederick":90,"Hagerstown":110,"Cambridge":138,"Salisbury":146},"Essex":{"Parkville":9,"Sinclair Lane":13,"Loch Raven":15,"York Rd":18,"Edgewood":19,"Cherry Hill":19,"St. Agnes":22,"Randallstown":25,"Downtown":26,"Golden Ring":26,"Ritchie Hwy":26,"Eastern Ave":27,"Catonsville":27,"Belair":28,"Owings Mills":30,"Northwest":30,"Columbia":37,"Laurel Place":38,"Annapolis":40,"Greenbelt":45,"Westminster":50,"Rockville":55,"Frederick":59,"Waldorf":77,"Hagerstown":81,"Cambridge":95,"Salisbury":132},"Edgewood":{"Belair":14,"Essex":19,"Parkville":21,"Golden Ring":22,"Sinclair Lane":24,"Loch Raven":28,"York Rd":29,"Eastern Ave":29,"St. Agnes":35,"Downtown":37,"Cherry Hill":40,"Ritchie Hwy":41,"Owings Mills":43,"Catonsville":48,"Randallstown":49,"Columbia":57,"Northwest":58,"Laurel Place":68,"Greenbelt":68,"Annapolis":51,"Westminster":69,"Frederick":102,"Hagerstown":122,"Waldorf":99,"Rockville":70,"Salisbury":161,"Cambridge":138},"Belair":{"Edgewood":14,"Parkville":26,"Golden Ring":27,"Catonsville":27,"Essex":28,"Sinclair Lane":29,"Loch Raven":33,"Eastern Ave":35,"York Rd":35,"Cherry Hill":36,"St. Agnes":38,"Randallstown":41,"Ritchie Hwy":43,"Downtown":44,"Owings Mills":46,"Northwest":46,"Columbia":54,"Laurel Place":56,"Annapolis":56,"Westminster":59,"Greenbelt":62,"Rockville":71,"Frederick":77,"Hagerstown":100,"Cambridge":111,"Salisbury":148},"Ritchie Hwy":{"St. Agnes":16,"Cherry Hill":17,"Catonsville":19,"Annapolis":23,"Downtown":24,"Essex":26,"Golden Ring":28,"Eastern Ave":29,"Parkville":29,"Northwest":30,"Randallstown":30,"Columbia":31,"Sinclair Lane":34,"Laurel Place":35,"York Rd":37,"Owings Mills":40,"Greenbelt":42,"Loch Raven":43,"Belair":43,"Edgewood":44,"Rockville":47,"Frederick":56,"Westminster":59,"Waldorf":69,"Hagerstown":79,"Salisbury":131},"Golden Ring":{"Parkville":6,"Sinclair Lane":10,"York Rd":10,"Loch Raven":15,"Eastern Ave":16,"Cherry Hill":18,"St. Agnes":18,"Randallstown":21,"Edgewood":22,"Downtown":25,"Essex":26,"Catonsville":27,"Belair":27,"Ritchie Hwy":27,"Owings Mills":30,"Northwest":30,"Columbia":35,"Laurel Place":35,"Greenbelt":39,"Annapolis":40,"Westminster":57,"Rockville":58,"Frederick":86,"Waldorf":88,"Hagerstown":110,"Cambridge":143,"Salisbury":150},"Greenbelt":{"Catonsville":15,"Laurel Place":18,"Annapolis":27,"Columbia":28,"Rockville":31,"St. Agnes":34,"Randallstown":39,"Owings Mills":39,"Ritchie Hwy":42,"Cherry Hill":44,"Sinclair Lane":44,"Golden Ring":45,"Essex":45,"Parkville":46,"Waldorf":46,"Loch Raven":48,"Northwest":49,"Downtown":49,"York Rd":49,"Eastern Ave":51,"Belair":62,"Edgewood":68,"Westminster":70,"Frederick":70,"Cambridge":98,"Hagerstown":98,"Salisbury":134},"Loch Raven":{"Parkville":10,"York Rd":12,"Sinclair Lane":14,"Golden Ring":15,"Essex":15,"Randallstown":21,"Eastern Ave":21,"Northwest":23,"Downtown":25,"Edgewood":30,"Cherry Hill":31,"Belair":33,"Catonsville":34,"St. Agnes":40,"Owings Mills":42,"Laurel Place":47,"Annapolis":47,"Greenbelt":48,"Westminster":52,"Ritchie Hwy":54,"Columbia":61,"Rockville":66,"Frederick":78,"Waldorf":94,"Hagerstown":106,"Cambridge":149,"Salisbury":157},"Owings Mills":{"Randallstown":13,"Northwest":18,"York Rd":23,"Catonsville":23,"Parkville":24,"Downtown":25,"Westminster":25,"St. Agnes":29,"Golden Ring":30,"Essex":30,"Cherry Hill":32,"Sinclair Lane":32,"Columbia":34,"Eastern Ave":36,"Ritchie Hwy":37,"Edgewood":41,"Loch Raven":42,"Laurel Place":46,"Belair":46,"Frederick":51,"Annapolis":53,"Greenbelt":56,"Rockville":68,"Hagerstown":74,"Waldorf":99,"Cambridge":126,"Salisbury":158},"Northwest":{"Randallstown":11,"Owings Mills":18,"Downtown":19,"Catonsville":19,"York Rd":20,"Loch Raven":23,"St. Agnes":24,"Parkville":25,"Columbia":27,"Cherry Hill":29,"Ritchie Hwy":30,"Golden Ring":30,"Essex":30,"Eastern Ave":30,"Sinclair Lane":34,"Westminster":37,"Belair":46,"Laurel Place":39,"Greenbelt":49,"Annapolis":50,"Frederick":55,"Edgewood":58,"Rockville":62,"Hagerstown":80,"Waldorf":98,"Cambridge":120,"Salisbury":157},"Parkville":{"York Rd":7,"Golden Ring":9,"Essex":9,"Loch Raven":10,"Sinclair Lane":12,"Eastern Ave":16,"Randallstown":18,"Cherry Hill":19,"Edgewood":21,"St. Agnes":22,"Owings Mills":24,"Northwest":25,"Belair":26,"Downtown":26,"Ritchie Hwy":29,"Catonsville":32,"Columbia":34,"Laurel Place":40,"Annapolis":41,"Greenbelt":46,"Westminster":52,"Rockville":59,"Frederick":81,"Waldorf":90,"Hagerstown":104,"Salisbury":152,"Cambridge":144},"Randallstown":{"Catonsville":10,"Northwest":11,"Owings Mills":13,"St. Agnes":14,"York Rd":16,"Parkville":18,"Columbia":20,"Loch Raven":21,"Cherry Hill":23,"Downtown":25,"Golden Ring":25,"Essex":25,"Ritchie Hwy":30,"Sinclair Lane":30,"Westminster":30,"Laurel Place":31,"Eastern Ave":33,"Greenbelt":39,"Belair":41,"Annapolis":45,"Edgewood":49,"Frederick":50,"Rockville":56,"Hagerstown":72,"Waldorf":93,"Cambridge":118,"Salisbury":150},"St. Agnes":{"Cherry Hill":9,"Catonsville":13,"Randallstown":14,"Ritchie Hwy":16,"Downtown":17,"Sinclair Lane":18,"Columbia":19,"Eastern Ave":19,"Golden Ring":21,"Essex":22,"Parkville":22,"Northwest":24,"Laurel Place":25,"York Rd":25,"Loch Raven":29,"Owings Mills":31,"Annapolis":32,"Greenbelt":34,"Edgewood":35,"Belair":38,"Westminster":41,"Rockville":45,"Frederick":46,"Hagerstown":69,"Waldorf":77,"Cambridge":106,"Salisbury":140},"Sinclair Lane":{"Parkville":12,"Essex":13,"Eastern Ave":13,"Loch Raven":14,"Golden Ring":15,"Cherry Hill":16,"York Rd":17,"Downtown":17,"St. Agnes":18,"Edgewood":25,"Ritchie Hwy":25,"Catonsville":26,"Belair":29,"Randallstown":30,"Owings Mills":32,"Columbia":34,"Northwest":34,"Laurel Place":36,"Annapolis":38,"Greenbelt":44,"Westminster":59,"Frederick":90,"Hagerstown":111,"Waldorf":85,"Rockville":56,"Salisbury":151,"Cambridge":138},"York Rd":{"Parkville":7,"Loch Raven":12,"Randallstown":16,"Sinclair Lane":17,"Golden Ring":18,"Essex":18,"Northwest":20,"Downtown":20,"Owings Mills":23,"St. Agnes":25,"Cherry Hill":27,"Edgewood":29,"Columbia":31,"Eastern Ave":31,"Belair":35,"Catonsville":35,"Ritchie Hwy":37,"Laurel Place":41,"Westminster":43,"Greenbelt":49,"Annapolis":52,"Rockville":70,"Frederick":74,"Hagerstown":101,"Waldorf":101,"Cambridge":145,"Salisbury":164},"Laurel Place":{"Greenbelt":18,"Columbia":21,"St. Agnes":25,"Catonsville":30,"Rockville":30,"Randallstown":31,"Annapolis":34,"Ritchie Hwy":35,"Cherry Hill":36,"Sinclair Lane":36,"Essex":38,"Northwest":39,"Parkville":40,"York Rd":41,"Golden Ring":42,"Eastern Ave":44,"Downtown":45,"Owings Mills":46,"Loch Raven":47,"Frederick":50,"Belair":56,"Westminster":58,"Waldorf":63,"Hagerstown":72,"Edgewood":78,"Cambridge":109,"Salisbury":141},"Columbia":{"Catonsville":18,"St. Agnes":19,"Randallstown":20,"Laurel Place":21,"Northwest":27,"Greenbelt":28,"Cherry Hill":28,"York Rd":31,"Ritchie Hwy":31,"Downtown":32,"Parkville":34,"Owings Mills":34,"Sinclair Lane":34,"Annapolis":35,"Rockville":36,"Essex":37,"Eastern Ave":37,"Golden Ring":40,"Frederick":42,"Westminster":46,"Belair":54,"Edgewood":57,"Loch Raven":61,"Hagerstown":66,"Waldorf":70,"Cambridge":112,"Salisbury":140},"Annapolis":{"Ritchie Hwy":23,"Greenbelt":27,"Cherry Hill":29,"St. Agnes":32,"Laurel Place":34,"Columbia":35,"Eastern Ave":36,"Sinclair Lane":38,"Downtown":39,"Essex":40,"Parkville":41,"Golden Ring":42,"Randallstown":45,"Loch Raven":47,"Northwest":50,"Edgewood":51,"Rockville":51,"York Rd":52,"Owings Mills":53,"Belair":56,"Catonsville":56,"Waldorf":58,"Cambridge":72,"Westminster":75,"Frederick":84,"Hagerstown":104,"Salisbury":111},"Waldorf":{"Greenbelt":46,"Annapolis":56,"Laurel Place":63,"Ritchie Hwy":69,"Columbia":70,"Rockville":70,"Cherry Hill":74,"Essex":77,"St. Agnes":77,"Catonsville":80,"Golden Ring":80,"Eastern Ave":83,"Sinclair Lane":85,"Downtown":86,"Parkville":90,"Randallstown":93,"Belair":94,"Loch Raven":94,"Frederick":94,"Northwest":98,"Owings Mills":99,"Edgewood":99,"York Rd":101,"Westminster":107,"Hagerstown":116,"Cambridge":127,"Salisbury":169},"Salisbury":{"Cambridge":40,"Annapolis":111,"Ritchie Hwy":131,"Essex":132,"Greenbelt":134,"Golden Ring":134,"Cherry Hill":137,"St. Agnes":140,"Columbia":140,"Laurel Place":141,"Catonsville":142,"Eastern Ave":146,"Belair":148,"Downtown":150,"Randallstown":150,"Sinclair Lane":151,"Parkville":152,"Northwest":157,"Loch Raven":157,"Owings Mills":158,"Rockville":160,"Edgewood":161,"York Rd":164,"Waldorf":169,"Frederick":172,"Westminster":174,"Hagerstown":195},"Rockville":{"Laurel Place":30,"Greenbelt":31,"Columbia":36,"Frederick":37,"St. Agnes":45,"Ritchie Hwy":47,"Catonsville":48,"Cherry Hill":48,"Annapolis":51,"Eastern Ave":54,"Downtown":54,"Essex":55,"Sinclair Lane":56,"Randallstown":56,"Golden Ring":58,"Parkville":59,"Hagerstown":60,"Northwest":62,"Westminster":64,"Loch Raven":66,"Owings Mills":68,"York Rd":70,"Edgewood":70,"Belair":71,"Waldorf":71,"Cambridge":121,"Salisbury":160},"Hagerstown":{"Frederick":28,"Rockville":60,"Catonsville":63,"Columbia":66,"Westminster":67,"St. Agnes":69,"Randallstown":72,"Laurel Place":72,"Owings Mills":74,"Ritchie Hwy":79,"Northwest":80,"Essex":81,"Golden Ring":84,"Downtown":92,"Cherry Hill":97,"Greenbelt":98,"Belair":100,"York Rd":101,"Parkville":104,"Annapolis":104,"Loch Raven":106,"Eastern Ave":110,"Sinclair Lane":111,"Waldorf":116,"Edgewood":122,"Cambridge":183,"Salisbury":195},"Frederick":{"Hagerstown":28,"Catonsville":40,"Columbia":42,"Westminster":46,"St. Agnes":46,"Randallstown":50,"Laurel Place":50,"Owings Mills":51,"Northwest":55,"Ritchie Hwy":56,"Cherry Hill":57,"Essex":59,"Rockville":60,"Golden Ring":61,"Downtown":62,"Greenbelt":70,"York Rd":74,"Belair":77,"Loch Raven":78,"Parkville":81,"Annapolis":84,"Sinclair Lane":90,"Eastern Ave":90,"Waldorf":94,"Edgewood":102,"Salisbury":172,"Cambridge":174},"Westminster":{"Owings Mills":25,"Randallstown":30,"Catonsville":35,"Northwest":37,"St. Agnes":41,"Golden Ring":42,"York Rd":43,"Downtown":43,"Frederick":46,"Columbia":46,"Essex":50,"Parkville":52,"Loch Raven":52,"Cherry Hill":56,"Laurel Place":58,"Belair":59,"Ritchie Hwy":59,"Eastern Ave":59,"Sinclair Lane":59,"Rockville":64,"Hagerstown":67,"Edgewood":69,"Greenbelt":70,"Annapolis":75,"Waldorf":107,"Cambridge":162,"Salisbury":174},"Cambridge":{"Salisbury":40,"Annapolis":72,"Essex":95,"Ritchie Hwy":97,"Golden Ring":97,"Greenbelt":98,"St. Agnes":106,"Cherry Hill":106,"Laurel Place":109,"Catonsville":110,"Belair":111,"Columbia":112,"Randallstown":118,"Northwest":120,"Rockville":121,"Owings Mills":126,"Waldorf":127,"Downtown":127,"Sinclair Lane":138,"Eastern Ave":138,"Edgewood":138,"Parkville":144,"York Rd":145,"Loch Raven":149,"Westminster":162,"Frederick":174,"Hagerstown":183}};
+const CLINICS={
+"Catonsville":{"lat":39.2723,"lng":-76.7319,"addr":"6400 Balt. Nat'l Pike Unit 280B, Baltimore, MD 21228"},
+"Cherry Hill":{"lat":39.2404,"lng":-76.628,"addr":"2830 S. Hanover St. Unit A-3, Baltimore, MD 21225"},
+"Downtown":{"lat":39.2995,"lng":-76.6156,"addr":"1130 N. Charles Street, Baltimore, MD 21201"},
+"Eastern Ave":{"lat":39.283,"lng":-76.5709,"addr":"3913 Eastern Avenue, Baltimore, MD 21224"},
+"Essex":{"lat":39.3079,"lng":-76.4739,"addr":"1201 Eastern Blvd, Baltimore, MD 21224"},
+"Edgewood":{"lat":39.4188,"lng":-76.2959,"addr":"1965A Pulaski Hwy, Edgewood, MD 21040"},
+"Belair":{"lat":39.536,"lng":-76.356,"addr":"516 Baltimore Pike, Bel Air, MD 21014"},
+"Ritchie Hwy":{"lat":39.1663,"lng":-76.6275,"addr":"7310 Gov. Ritchie Hwy Ste 810, Glen Burnie, MD 21061"},
+"Golden Ring":{"lat":39.3208,"lng":-76.5032,"addr":"7106 Ridge Rd. Ste 150, Rosedale, MD 21237"},
+"Greenbelt":{"lat":39.0065,"lng":-76.8754,"addr":"8717 Greenbelt Rd Ste 101, Greenbelt, MD 20770"},
+"Loch Raven":{"lat":39.3705,"lng":-76.5511,"addr":"2305 Cleanleight Drive, Baltimore, MD 21234"},
+"Owings Mills":{"lat":39.418,"lng":-76.7797,"addr":"10989 Red Run Blvd Ste 204, Owings Mills, MD 21117"},
+"Northwest":{"lat":39.3367,"lng":-76.693,"addr":"4149 Patterson Avenue, Baltimore, MD 21215"},
+"Parkville":{"lat":39.3771,"lng":-76.5381,"addr":"9403 Harford Rd Ste 3, Baltimore, MD 21234"},
+"Randallstown":{"lat":39.3713,"lng":-76.8019,"addr":"8043 Liberty Road, Baltimore, MD 21244"},
+"St. Agnes":{"lat":39.2758,"lng":-76.6765,"addr":"3454 Wilkens Avenue, Baltimore, MD 21229"},
+"Sinclair Lane":{"lat":39.3102,"lng":-76.5525,"addr":"5118 Sinclair Lane, Baltimore, MD 21206"},
+"York Rd":{"lat":39.401,"lng":-76.5993,"addr":"7801 York Road Ste 236, Towson, MD 21204"},
+"Laurel Place":{"lat":39.0993,"lng":-76.8583,"addr":"14405 Laurel Place Ste 102, Laurel, MD 20707"},
+"Columbia":{"lat":39.2157,"lng":-76.8613,"addr":"11055 Little Patuxent Pkwy #L4, Columbia, MD 21044"},
+"Annapolis":{"lat":38.9784,"lng":-76.5434,"addr":"1967 West St. Ste B, Annapolis, MD 21401"},
+"Waldorf":{"lat":38.624,"lng":-76.8879,"addr":"3165 Crain Hwy Ste 100, Waldorf, MD 20603"},
+"Salisbury":{"lat":38.3652,"lng":-75.5994,"addr":"1324 Belmont Ave. Ste 101, Salisbury, MD 21804"},
+"Rockville":{"lat":39.0839,"lng":-77.1528,"addr":"3200 Tower Oaks Blvd Ste 450, Rockville, MD 20852"},
+"Hagerstown":{"lat":39.6418,"lng":-77.7199,"addr":"1101 Opal Court Ste 306, Hagerstown, MD 21704"},
+"Frederick":{"lat":39.4143,"lng":-77.4105,"addr":"405 S. Jefferson St. Unit B, Frederick, MD 21701"},
+"Westminster":{"lat":39.5751,"lng":-76.9958,"addr":"540-A Jermor Lane, Westminster, MD 21157"},
+"Cambridge":{"lat":38.5632,"lng":-76.0788,"addr":"309 Sunburst Hwy Ste 7, Cambridge, MD 21613"}
+};
+
+const TIMES={"Catonsville":{"Randallstown":11,"St. Agnes":13,"Cherry Hill":15,"Columbia":18,"Ritchie Hwy":19,"Northwest":19,"Sinclair Lane":23,"Owings Mills":24,"Downtown":24,"Golden Ring":26,"Eastern Ave":26,"Essex":27,"Belair":27,"Laurel Place":30,"Parkville":32,"Loch Raven":34,"York Rd":35,"Westminster":35,"Greenbelt":39,"Frederick":40,"Edgewood":48,"Rockville":48,"Annapolis":56,"Hagerstown":63,"Waldorf":80,"Cambridge":110,"Salisbury":142},"Cherry Hill":{"St. Agnes":9,"Downtown":10,"Catonsville":15,"Sinclair Lane":15,"Ritchie Hwy":18,"Eastern Ave":18,"Essex":19,"Golden Ring":19,"Parkville":19,"Randallstown":23,"Loch Raven":24,"Northwest":26,"York Rd":27,"Columbia":28,"Annapolis":29,"Owings Mills":33,"Laurel Place":36,"Belair":36,"Edgewood":40,"Greenbelt":44,"Rockville":48,"Westminster":56,"Frederick":57,"Waldorf":74,"Hagerstown":97,"Cambridge":106,"Salisbury":127},"Downtown":{"Cherry Hill":13,"St. Agnes":17,"Sinclair Lane":17,"Eastern Ave":18,"Northwest":19,"Loch Raven":19,"York Rd":20,"Catonsville":24,"Owings Mills":25,"Randallstown":25,"Essex":26,"Parkville":26,"Golden Ring":27,"Ritchie Hwy":28,"Columbia":32,"Annapolis":40,"Westminster":43,"Belair":44,"Edgewood":44,"Laurel Place":45,"Greenbelt":49,"Rockville":54,"Frederick":62,"Waldorf":86,"Hagerstown":92,"Cambridge":127,"Salisbury":150},"Eastern Ave":{"Sinclair Lane":12,"Parkville":16,"Downtown":17,"Golden Ring":18,"Cherry Hill":18,"St. Agnes":19,"Loch Raven":21,"Ritchie Hwy":23,"Catonsville":26,"Essex":27,"Northwest":30,"York Rd":31,"Edgewood":32,"Randallstown":33,"Belair":35,"Annapolis":36,"Owings Mills":37,"Columbia":37,"Laurel Place":44,"Greenbelt":51,"Rockville":54,"Westminster":59,"Waldorf":83,"Frederick":90,"Hagerstown":110,"Cambridge":138,"Salisbury":146},"Essex":{"Parkville":9,"Sinclair Lane":13,"Loch Raven":15,"York Rd":18,"Edgewood":19,"Cherry Hill":19,"St. Agnes":22,"Randallstown":25,"Downtown":26,"Golden Ring":26,"Ritchie Hwy":26,"Eastern Ave":27,"Catonsville":27,"Belair":28,"Owings Mills":30,"Northwest":30,"Columbia":37,"Laurel Place":38,"Annapolis":40,"Greenbelt":45,"Westminster":50,"Rockville":55,"Frederick":59,"Waldorf":77,"Hagerstown":81,"Cambridge":95,"Salisbury":132},"Edgewood":{"Belair":14,"Essex":19,"Parkville":21,"Golden Ring":22,"Sinclair Lane":24,"Loch Raven":28,"York Rd":29,"Eastern Ave":29,"St. Agnes":35,"Downtown":37,"Cherry Hill":40,"Ritchie Hwy":41,"Owings Mills":43,"Catonsville":48,"Randallstown":49,"Columbia":57,"Northwest":58,"Laurel Place":68,"Greenbelt":68,"Annapolis":51,"Westminster":69,"Frederick":102,"Hagerstown":122,"Waldorf":99,"Rockville":70,"Salisbury":161,"Cambridge":138},"Belair":{"Edgewood":14,"Parkville":26,"Golden Ring":27,"Catonsville":27,"Essex":28,"Sinclair Lane":29,"Loch Raven":33,"Eastern Ave":35,"York Rd":35,"Cherry Hill":36,"St. Agnes":38,"Randallstown":41,"Ritchie Hwy":43,"Downtown":44,"Owings Mills":46,"Northwest":46,"Columbia":54,"Laurel Place":56,"Annapolis":56,"Westminster":59,"Greenbelt":62,"Rockville":71,"Frederick":77,"Hagerstown":100,"Cambridge":111,"Salisbury":148},"Ritchie Hwy":{"St. Agnes":16,"Cherry Hill":17,"Catonsville":19,"Annapolis":23,"Downtown":24,"Essex":26,"Golden Ring":28,"Eastern Ave":29,"Parkville":29,"Northwest":30,"Randallstown":30,"Columbia":31,"Sinclair Lane":34,"Laurel Place":35,"York Rd":37,"Owings Mills":40,"Greenbelt":42,"Loch Raven":43,"Belair":43,"Edgewood":44,"Rockville":47,"Frederick":56,"Westminster":59,"Waldorf":69,"Hagerstown":79,"Salisbury":131},"Golden Ring":{"Parkville":6,"Sinclair Lane":10,"York Rd":10,"Loch Raven":15,"Eastern Ave":16,"Cherry Hill":18,"St. Agnes":18,"Randallstown":21,"Edgewood":22,"Downtown":25,"Essex":26,"Catonsville":27,"Belair":27,"Ritchie Hwy":27,"Owings Mills":30,"Northwest":30,"Columbia":35,"Laurel Place":35,"Greenbelt":39,"Annapolis":40,"Westminster":57,"Rockville":58,"Frederick":86,"Waldorf":88,"Hagerstown":110,"Cambridge":143,"Salisbury":150},"Greenbelt":{"Catonsville":15,"Laurel Place":18,"Annapolis":27,"Columbia":28,"Rockville":31,"St. Agnes":34,"Randallstown":39,"Owings Mills":39,"Ritchie Hwy":42,"Cherry Hill":44,"Sinclair Lane":44,"Golden Ring":45,"Essex":45,"Parkville":46,"Waldorf":46,"Loch Raven":48,"Northwest":49,"Downtown":49,"York Rd":49,"Eastern Ave":51,"Belair":62,"Edgewood":68,"Westminster":70,"Frederick":70,"Cambridge":98,"Hagerstown":98,"Salisbury":134},"Loch Raven":{"Parkville":10,"York Rd":12,"Sinclair Lane":14,"Golden Ring":15,"Essex":15,"Randallstown":21,"Eastern Ave":21,"Northwest":23,"Downtown":25,"Edgewood":30,"Cherry Hill":31,"Belair":33,"Catonsville":34,"St. Agnes":40,"Owings Mills":42,"Laurel Place":47,"Annapolis":47,"Greenbelt":48,"Westminster":52,"Ritchie Hwy":54,"Columbia":61,"Rockville":66,"Frederick":78,"Waldorf":94,"Hagerstown":106,"Cambridge":149,"Salisbury":157},"Owings Mills":{"Randallstown":13,"Northwest":18,"York Rd":23,"Catonsville":23,"Parkville":24,"Downtown":25,"Westminster":25,"St. Agnes":29,"Golden Ring":30,"Essex":30,"Cherry Hill":32,"Sinclair Lane":32,"Columbia":34,"Eastern Ave":36,"Ritchie Hwy":37,"Edgewood":41,"Loch Raven":42,"Laurel Place":46,"Belair":46,"Frederick":51,"Annapolis":53,"Greenbelt":56,"Rockville":68,"Hagerstown":74,"Waldorf":99,"Cambridge":126,"Salisbury":158},"Northwest":{"Randallstown":11,"Owings Mills":18,"Downtown":19,"Catonsville":19,"York Rd":20,"Loch Raven":23,"St. Agnes":24,"Parkville":25,"Columbia":27,"Cherry Hill":29,"Ritchie Hwy":30,"Golden Ring":30,"Essex":30,"Eastern Ave":30,"Sinclair Lane":34,"Westminster":37,"Belair":46,"Laurel Place":39,"Greenbelt":49,"Annapolis":50,"Frederick":55,"Edgewood":58,"Rockville":62,"Hagerstown":80,"Waldorf":98,"Cambridge":120,"Salisbury":157},"Parkville":{"York Rd":7,"Golden Ring":9,"Essex":9,"Loch Raven":10,"Sinclair Lane":12,"Eastern Ave":16,"Randallstown":18,"Cherry Hill":19,"Edgewood":21,"St. Agnes":22,"Owings Mills":24,"Northwest":25,"Belair":26,"Downtown":26,"Ritchie Hwy":29,"Catonsville":32,"Columbia":34,"Laurel Place":40,"Annapolis":41,"Greenbelt":46,"Westminster":52,"Rockville":59,"Frederick":81,"Waldorf":90,"Hagerstown":104,"Salisbury":152,"Cambridge":144},"Randallstown":{"Catonsville":10,"Northwest":11,"Owings Mills":13,"St. Agnes":14,"York Rd":16,"Parkville":18,"Columbia":20,"Loch Raven":21,"Cherry Hill":23,"Downtown":25,"Golden Ring":25,"Essex":25,"Ritchie Hwy":30,"Sinclair Lane":30,"Westminster":30,"Laurel Place":31,"Eastern Ave":33,"Greenbelt":39,"Belair":41,"Annapolis":45,"Edgewood":49,"Frederick":50,"Rockville":56,"Hagerstown":72,"Waldorf":93,"Cambridge":118,"Salisbury":150},"St. Agnes":{"Cherry Hill":9,"Catonsville":13,"Randallstown":14,"Ritchie Hwy":16,"Downtown":17,"Sinclair Lane":18,"Columbia":19,"Eastern Ave":19,"Golden Ring":21,"Essex":22,"Parkville":22,"Northwest":24,"Laurel Place":25,"York Rd":25,"Loch Raven":29,"Owings Mills":31,"Annapolis":32,"Greenbelt":34,"Edgewood":35,"Belair":38,"Westminster":41,"Rockville":45,"Frederick":46,"Hagerstown":69,"Waldorf":77,"Cambridge":106,"Salisbury":140},"Sinclair Lane":{"Parkville":12,"Essex":13,"Eastern Ave":13,"Loch Raven":14,"Golden Ring":15,"Cherry Hill":16,"York Rd":17,"Downtown":17,"St. Agnes":18,"Edgewood":25,"Ritchie Hwy":25,"Catonsville":26,"Belair":29,"Randallstown":30,"Owings Mills":32,"Columbia":34,"Northwest":34,"Laurel Place":36,"Annapolis":38,"Greenbelt":44,"Westminster":59,"Frederick":90,"Hagerstown":111,"Waldorf":85,"Rockville":56,"Salisbury":151,"Cambridge":138},"York Rd":{"Parkville":7,"Loch Raven":12,"Randallstown":16,"Sinclair Lane":17,"Golden Ring":18,"Essex":18,"Northwest":20,"Downtown":20,"Owings Mills":23,"St. Agnes":25,"Cherry Hill":27,"Edgewood":29,"Columbia":31,"Eastern Ave":31,"Belair":35,"Catonsville":35,"Ritchie Hwy":37,"Laurel Place":41,"Westminster":43,"Greenbelt":49,"Annapolis":52,"Rockville":70,"Frederick":74,"Hagerstown":101,"Waldorf":101,"Cambridge":145,"Salisbury":164},"Laurel Place":{"Greenbelt":18,"Columbia":21,"St. Agnes":25,"Catonsville":30,"Rockville":30,"Randallstown":31,"Annapolis":34,"Ritchie Hwy":35,"Cherry Hill":36,"Sinclair Lane":36,"Essex":38,"Northwest":39,"Parkville":40,"York Rd":41,"Golden Ring":42,"Eastern Ave":44,"Downtown":45,"Owings Mills":46,"Loch Raven":47,"Frederick":50,"Belair":56,"Westminster":58,"Waldorf":63,"Hagerstown":72,"Edgewood":78,"Cambridge":109,"Salisbury":141},"Columbia":{"Catonsville":18,"St. Agnes":19,"Randallstown":20,"Laurel Place":21,"Northwest":27,"Greenbelt":28,"Cherry Hill":28,"York Rd":31,"Ritchie Hwy":31,"Downtown":32,"Parkville":34,"Owings Mills":34,"Sinclair Lane":34,"Annapolis":35,"Rockville":36,"Essex":37,"Eastern Ave":37,"Golden Ring":40,"Frederick":42,"Westminster":46,"Belair":54,"Edgewood":57,"Loch Raven":61,"Hagerstown":66,"Waldorf":70,"Cambridge":112,"Salisbury":140},"Annapolis":{"Ritchie Hwy":23,"Greenbelt":27,"Cherry Hill":29,"St. Agnes":32,"Laurel Place":34,"Columbia":35,"Eastern Ave":36,"Sinclair Lane":38,"Downtown":39,"Essex":40,"Parkville":41,"Golden Ring":42,"Randallstown":45,"Loch Raven":47,"Northwest":50,"Edgewood":51,"Rockville":51,"York Rd":52,"Owings Mills":53,"Belair":56,"Catonsville":56,"Waldorf":58,"Cambridge":72,"Westminster":75,"Frederick":84,"Hagerstown":104,"Salisbury":111},"Waldorf":{"Greenbelt":46,"Annapolis":56,"Laurel Place":63,"Ritchie Hwy":69,"Columbia":70,"Rockville":70,"Cherry Hill":74,"Essex":77,"St. Agnes":77,"Catonsville":80,"Golden Ring":80,"Eastern Ave":83,"Sinclair Lane":85,"Downtown":86,"Parkville":90,"Randallstown":93,"Belair":94,"Loch Raven":94,"Frederick":94,"Northwest":98,"Owings Mills":99,"Edgewood":99,"York Rd":101,"Westminster":107,"Hagerstown":116,"Cambridge":127,"Salisbury":169},"Salisbury":{"Cambridge":40,"Annapolis":111,"Ritchie Hwy":131,"Essex":132,"Greenbelt":134,"Golden Ring":134,"Cherry Hill":137,"St. Agnes":140,"Columbia":140,"Laurel Place":141,"Catonsville":142,"Eastern Ave":146,"Belair":148,"Downtown":150,"Randallstown":150,"Sinclair Lane":151,"Parkville":152,"Northwest":157,"Loch Raven":157,"Owings Mills":158,"Rockville":160,"Edgewood":161,"York Rd":164,"Waldorf":169,"Frederick":172,"Westminster":174,"Hagerstown":195},"Rockville":{"Laurel Place":30,"Greenbelt":31,"Columbia":36,"Frederick":37,"St. Agnes":45,"Ritchie Hwy":47,"Catonsville":48,"Cherry Hill":48,"Annapolis":51,"Eastern Ave":54,"Downtown":54,"Essex":55,"Sinclair Lane":56,"Randallstown":56,"Golden Ring":58,"Parkville":59,"Hagerstown":60,"Northwest":62,"Westminster":64,"Loch Raven":66,"Owings Mills":68,"York Rd":70,"Edgewood":70,"Belair":71,"Waldorf":71,"Cambridge":121,"Salisbury":160},"Hagerstown":{"Frederick":28,"Rockville":60,"Catonsville":63,"Columbia":66,"Westminster":67,"St. Agnes":69,"Randallstown":72,"Laurel Place":72,"Owings Mills":74,"Ritchie Hwy":79,"Northwest":80,"Essex":81,"Golden Ring":84,"Downtown":92,"Cherry Hill":97,"Greenbelt":98,"Belair":100,"York Rd":101,"Parkville":104,"Annapolis":104,"Loch Raven":106,"Eastern Ave":110,"Sinclair Lane":111,"Waldorf":116,"Edgewood":122,"Cambridge":183,"Salisbury":195},"Frederick":{"Hagerstown":28,"Catonsville":40,"Columbia":42,"Westminster":46,"St. Agnes":46,"Randallstown":50,"Laurel Place":50,"Owings Mills":51,"Northwest":55,"Ritchie Hwy":56,"Cherry Hill":57,"Essex":59,"Rockville":60,"Golden Ring":61,"Downtown":62,"Greenbelt":70,"York Rd":74,"Belair":77,"Loch Raven":78,"Parkville":81,"Annapolis":84,"Sinclair Lane":90,"Eastern Ave":90,"Waldorf":94,"Edgewood":102,"Salisbury":172,"Cambridge":174},"Westminster":{"Owings Mills":25,"Randallstown":30,"Catonsville":35,"Northwest":37,"St. Agnes":41,"Golden Ring":42,"York Rd":43,"Downtown":43,"Frederick":46,"Columbia":46,"Essex":50,"Parkville":52,"Loch Raven":52,"Cherry Hill":56,"Laurel Place":58,"Belair":59,"Ritchie Hwy":59,"Eastern Ave":59,"Sinclair Lane":59,"Rockville":64,"Hagerstown":67,"Edgewood":69,"Greenbelt":70,"Annapolis":75,"Waldorf":107,"Cambridge":162,"Salisbury":174},"Cambridge":{"Salisbury":40,"Annapolis":72,"Essex":95,"Ritchie Hwy":97,"Golden Ring":97,"Greenbelt":98,"St. Agnes":106,"Cherry Hill":106,"Laurel Place":109,"Catonsville":110,"Belair":111,"Columbia":112,"Randallstown":118,"Northwest":120,"Rockville":121,"Owings Mills":126,"Waldorf":127,"Downtown":127,"Sinclair Lane":138,"Eastern Ave":138,"Edgewood":138,"Parkville":144,"York Rd":145,"Loch Raven":149,"Westminster":162,"Frederick":174,"Hagerstown":183}};
 
 function ms(m){if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?h+'h '+r+'m':h+'h'}
 function gc(m){return m<=30?'#27AE60':m<=60?'#E67E22':m<=90?'#E74C3C':'#8E44AD'}
 function gcat(m){return m<=30?'near':m<=60?'mod':m<=90?'far':'vfar'}
 
-const map=L.map('map',{center:[39.1,-76.8],zoom:9});
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:18}).addTo(map);
+const map=L.map('map',{center:[39.1,-76.8],zoom:9,zoomControl:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19}).addTo(map);
 
-const leg=L.control({position:'bottomleft'});
-leg.onAdd=()=>{const d=L.DomUtil.create('div','leg');d.innerHTML='<b>&#128336; Travel time</b><div class="lrow"><div class="ldot" style="background:#27AE60"></div>&le;30 min</div><div class="lrow"><div class="ldot" style="background:#E67E22"></div>31&ndash;60 min</div><div class="lrow"><div class="ldot" style="background:#E74C3C"></div>61&ndash;90 min</div><div class="lrow"><div class="ldot" style="background:#8E44AD"></div>90+ min</div><div class="lrow"><div class="ldot" style="background:#1A2980;border:2px solid #fff"></div>Selected</div>';return d;};
-leg.addTo(map);
+let MK={},LINES=[],active=null,filt='all',patMk=null;
 
-let MK={},LN=[],active=null,filt='all',patMk=null;
-
-function icon(col,sz,sel){
-  const s=sel?20:sz;
-  return L.divIcon({className:'',html:`<div style="width:${s}px;height:${s}px;border-radius:50%;background:${col};border:${sel?'3px solid #fff':'2px solid rgba(255,255,255,.75)'};box-shadow:${sel?`0 0 0 3px ${col},0 2px 8px rgba(0,0,0,.4)`:'0 1px 4px rgba(0,0,0,.25)'}"></div>`,iconSize:[s,s],iconAnchor:[s/2,s/2],popupAnchor:[0,-s/2]});
+function mkIcon(col,sz,sel){
+  const s=sel?22:sz;
+  return L.divIcon({className:'',
+    html:`<div style="width:${s}px;height:${s}px;border-radius:50%;background:${col};border:${sel?'3px solid #fff':'2px solid rgba(255,255,255,.8)'};box-shadow:${sel?`0 0 0 3px ${col},0 3px 10px rgba(0,0,0,.35)`:'0 1px 5px rgba(0,0,0,.28)'}"></div>`,
+    iconSize:[s,s],iconAnchor:[s/2,s/2],popupAnchor:[0,-s/2]});
 }
 function originIcon(){
-  return L.divIcon({className:'',html:`<div style="width:24px;height:24px;border-radius:50%;background:#1A2980;border:3px solid #fff;box-shadow:0 0 0 3px #1A2980,0 3px 10px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">+</div>`,iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-12]});
+  return L.divIcon({className:'',
+    html:`<div style="width:26px;height:26px;border-radius:50%;background:#1A2980;border:3px solid #fff;box-shadow:0 0 0 3px #1A2980,0 3px 12px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;line-height:1">+</div>`,
+    iconSize:[26,26],iconAnchor:[13,13],popupAnchor:[0,-13]});
 }
 
-Object.keys(C).sort().forEach(n=>{
-  document.querySelectorAll('.p-sel').forEach(s=>{const o=document.createElement('option');o.value=n;o.textContent=n;s.appendChild(o);});
-  const mk=L.marker([C[n].lat,C[n].lng],{icon:icon('#bbb',12,false)}).addTo(map);
-  mk.on('click',()=>pickClinic(n));
+Object.keys(CLINICS).sort().forEach(n=>{
+  document.querySelectorAll('.spb-sel').forEach(s=>{
+    const o=document.createElement('option');o.value=n;o.textContent=n;s.appendChild(o);
+  });
+  const mk=L.marker([CLINICS[n].lat,CLINICS[n].lng],{icon:mkIcon('#ccc',12,false)}).addTo(map);
+  mk.on('click',()=>pick(n));
   MK[n]=mk;
 });
 
-function clearLines(){LN.forEach(l=>map.removeLayer(l));LN=[];}
+function buildFilters(){
+  const defs=[{k:'all',lbl:'All',cl:'fa'},{k:'near',lbl:'&le;30 min',cl:'fn'},{k:'mod',lbl:'31&ndash;60',cl:'fm'},{k:'far',lbl:'61&ndash;90',cl:'ff'},{k:'vfar',lbl:'90+',cl:'fv'}];
+  ['frow-d','frow-m'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=defs.map(d=>`<button class="fb ${d.cl}${d.k===filt?' on':''}" data-k="${d.k}">${d.lbl}</button>`).join('');
+    el.querySelectorAll('.fb').forEach(b=>b.addEventListener('click',()=>{filt=b.dataset.k;buildFilters();if(active)renderList();}));
+  });
+}
+buildFilters();
 
-function pickClinic(name){
+function clearLines(){LINES.forEach(l=>map.removeLayer(l));LINES=[];}
+
+function pick(name){
   if(!name)return;
   active=name;
-  document.querySelectorAll('.p-sel').forEach(s=>s.value=name);
+  document.querySelectorAll('.spb-sel').forEach(s=>s.value=name);
   clearLines();
-  Object.keys(C).forEach(n=>{MK[n].setIcon(icon('#ccc',11,false));MK[n].setZIndexOffset(0);});
+  Object.keys(CLINICS).forEach(n=>{MK[n].setIcon(mkIcon('#ccc',11,false));MK[n].setZIndexOffset(0);});
   MK[name].setIcon(originIcon());MK[name].setZIndexOffset(1000);
-  const times=T[name]||{};
+  const times=TIMES[name]||{};
   const sorted=Object.entries(times).sort((a,b)=>a[1]-b[1]);
   sorted.forEach(([dest,mins])=>{
-    if(!C[dest])return;
-    const cat=gcat(mins),show=filt==='all'||filt===cat,col=gc(mins);
+    if(!CLINICS[dest])return;
+    const col=gc(mins),cat=gcat(mins),show=filt==='all'||filt===cat;
     if(show){
-      MK[dest].setIcon(icon(col,16,false));MK[dest].setZIndexOffset(500);
-      LN.push(L.polyline([[C[name].lat,C[name].lng],[C[dest].lat,C[dest].lng]],{color:col,weight:2,opacity:.4,dashArray:'5,7'}).addTo(map));
+      MK[dest].setIcon(mkIcon(col,16,false));MK[dest].setZIndexOffset(500);
+      LINES.push(L.polyline([[CLINICS[name].lat,CLINICS[name].lng],[CLINICS[dest].lat,CLINICS[dest].lng]],{color:col,weight:2,opacity:.4,dashArray:'6,8'}).addTo(map));
     }
-    MK[dest].bindPopup(mkPopup(dest,name,mins,sorted),{maxWidth:280,className:'lpop'});
+    MK[dest].bindPopup(mkPopup(dest,name,mins,sorted),{maxWidth:280,className:'spbpop'});
   });
-  const top5=sorted.slice(0,5).map(([d,m])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:.5px solid #f0f0f0"><span style="font-size:11px">${d}</span><span style="font-size:11px;font-weight:700;color:${gc(m)}">${ms(m)}</span></div>`).join('');
-  MK[name].bindPopup(`<div class="ph"><div class="ph-n">&#128205; ${name}</div><div class="ph-a">${C[name].addr}</div></div><div class="pb"><div style="font-size:10px;font-weight:700;color:#555;margin-bottom:5px">5 nearest clinics</div>${top5}<div style="font-size:10px;color:#bbb;margin-top:6px">Tap any marker for full details</div></div>`,{maxWidth:270,className:'lpop'}).openPopup();
-  buildList(name,sorted);
+  const t5=sorted.slice(0,5).map(([d,m])=>`<div class="pu-near-row"><span>${d}</span><span style="font-weight:700;color:${gc(m)}">${ms(m)}</span></div>`).join('');
+  MK[name].bindPopup(`<div class="pu-hdr"><div class="pu-name">&#128205; ${name}</div><div class="pu-addr">${CLINICS[name].addr}</div></div><div class="pu-body"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:5px">5 nearest clinics:</div>${t5}<div style="font-size:10px;color:#bbb;margin-top:6px">Tap any marker for full travel details</div></div>`,{maxWidth:270,className:'spbpop'}).openPopup();
+  renderList();
+  document.getElementById('detail').style.display='none';
 }
 
 function mkPopup(dest,origin,mins,sorted){
   const col=gc(mins);
-  const gurl=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(C[dest].addr)}&travelmode=driving`;
-  const nearby=sorted.filter(([d])=>d!==dest).slice(0,4).map(([d,m])=>`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:.5px solid #f0f0f0"><span style="font-size:11px">${d}</span><span style="font-size:11px;font-weight:700;color:${gc(m)}">${ms(m)}</span></div>`).join('');
-  return `<div class="ph"><div class="ph-n">&#127973; ${dest}</div><div class="ph-a">${C[dest].addr}</div></div><div class="pb"><span class="ptag" style="background:${col}">&#128336; ${ms(mins)} from ${origin}</span><div style="font-size:10px;color:#999;margin-bottom:5px">Other clinics from ${origin}:</div>${nearby}<div class="pbrow"><a href="${gurl}" target="_blank" class="pba pba-g">&#128205; Open in Google Maps</a><button class="pba pba-r" onclick="patFromClinic('${dest}')">&#128100; Patient here</button></div></div>`;
+  const gurl='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(CLINICS[dest].addr)+'&travelmode=driving';
+  const near=sorted.filter(([d])=>d!==dest).slice(0,4).map(([d,m])=>`<div class="pu-near-row"><span>${d}</span><span style="font-weight:700;color:${gc(m)}">${ms(m)}</span></div>`).join('');
+  return `<div class="pu-hdr"><div class="pu-name">&#127973; ${dest}</div><div class="pu-addr">${CLINICS[dest].addr}</div></div><div class="pu-body"><span class="pu-badge" style="background:${col}">&#128336; ${ms(mins)} from ${origin}</span><div class="pu-near">${near}</div><a href="${gurl}" target="_blank" class="pu-gmap">&#128205; Open in Google Maps</a></div>`;
 }
 
-window.patFromClinic=function(clinicName){
-  const addr=C[clinicName].addr;
-  document.querySelectorAll('#pat-addr,#pat-addr-m').forEach(el=>el.value=addr);
-  runPatient(addr);
+function renderList(){
+  if(!active){document.getElementById('clinic-list').innerHTML='<div class="empty">Select a clinic above</div>';return;}
+  const times=TIMES[active]||{};
+  const sorted=Object.entries(times).sort((a,b)=>a[1]-b[1]);
+  const vis=filt==='all'?sorted:sorted.filter(([,m])=>gcat(m)===filt);
+  document.getElementById('list-hdr').textContent=`From ${active} — ${vis.length} destination${vis.length!==1?'s':''}`;
+  const html=vis.map(([d,m])=>`<div class="crow" onclick="showDet('${d.replace(/'/g,"\'")}',${m})"><div class="cdot" style="background:${gc(m)}"></div><div class="cname">${d}</div><span class="ctag" style="background:${gc(m)}">${ms(m)}</span></div>`).join('');
+  document.getElementById('clinic-list').innerHTML=html||'<div class="empty">No results for this filter</div>';
+  const mhtml=vis.map(([d,m])=>`<div class="crow" onclick="map.setView([${CLINICS[d].lat},${CLINICS[d].lng}],13);MK['${d.replace(/'/g,"\'")}'].openPopup();sheetClose()"><div class="cdot" style="background:${gc(m)}"></div><div class="cname">${d}</div><span class="ctag" style="background:${gc(m)}">${ms(m)}</span></div>`).join('');
+  document.getElementById('mobile-list').innerHTML=mhtml||'<div class="empty">No results for this filter</div>';
+}
+
+window.showDet=function(dest,mins){
+  const col=gc(mins);
+  const gurl='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(CLINICS[dest].addr)+'&travelmode=driving';
+  const times=TIMES[active]||{};
+  const sorted=Object.entries(times).sort((a,b)=>a[1]-b[1]);
+  const near=sorted.filter(([d])=>d!==dest).slice(0,6).map(([d,m])=>`<div class="near-row"><span class="near-name">${d}</span><span class="near-t" style="color:${gc(m)}">${ms(m)}</span></div>`).join('');
+  const det=document.getElementById('detail');
+  det.style.display='block';
+  det.innerHTML=`<div class="det-hdr"><button class="det-close-btn" onclick="document.getElementById('detail').style.display='none'">&#10005;</button><h3>${dest}</h3><p>${CLINICS[dest].addr}</p></div><div class="det-body"><span class="det-badge" style="background:${col}">&#128336; ${ms(mins)} from ${active}</span><div style="font-size:11px;font-weight:700;color:#555;margin:6px 0 4px">Other clinics from ${active}:</div>${near}<a href="${gurl}" target="_blank" class="gmap-btn">&#128205; Open in Google Maps for directions</a></div>`;
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+  map.setView([CLINICS[dest].lat,CLINICS[dest].lng],13);
+  MK[dest].openPopup();
 };
 
-function buildList(name,sorted){
-  document.getElementById('list-hdr').textContent=`From ${name} — ${sorted.length} destinations`;
-  const html=sorted.map(([dest,mins])=>{
-    const cat=gcat(mins),show=filt==='all'||filt===cat;
-    if(!show)return '';
-    const col=gc(mins);
-    return `<div class="crow" onclick="focusMk('${dest}')"><div class="cdot" style="background:${col}"></div><div class="cname">${dest}</div><span class="ctag" style="background:${col}">${ms(mins)}</span></div>`;
-  }).join('');
-  document.getElementById('clinic-list').innerHTML=html||'<div style="padding:14px;color:#bbb;font-size:12px;text-align:center">No clinics match filter</div>';
-  document.getElementById('mobile-list').innerHTML=html||'<div style="padding:14px;color:#bbb;font-size:12px;text-align:center">No clinics match filter</div>';
-}
-
-window.focusMk=function(n){map.setView([C[n].lat,C[n].lng],13);MK[n].openPopup();sheetClose();};
-
-function applyFilter(f){
-  filt=f;
-  document.querySelectorAll('.fb[data-k]').forEach(b=>{b.classList.toggle('on',b.dataset.k===f);});
-  document.querySelectorAll('.fb[data-m]').forEach(b=>{b.classList.toggle('on',b.dataset.m===f);});
-  if(active){const times=T[active]||{};buildList(active,Object.entries(times).sort((a,b)=>a[1]-b[1]));clearLines();reDrawLines();}
-}
-
-function reDrawLines(){
-  if(!active)return;
-  const times=T[active]||{};
-  Object.entries(times).forEach(([dest,mins])=>{
-    if(!C[dest])return;
-    const cat=gcat(mins),show=filt==='all'||filt===cat,col=gc(mins);
-    if(show){
-      MK[dest].setIcon(icon(col,16,false));MK[dest].setZIndexOffset(500);
-      LN.push(L.polyline([[C[active].lat,C[active].lng],[C[dest].lat,C[dest].lng]],{color:col,weight:2,opacity:.4,dashArray:'5,7'}).addTo(map));
-    } else {
-      MK[dest].setIcon(icon('#ccc',11,false));MK[dest].setZIndexOffset(0);
-    }
-  });
-}
-
-document.querySelectorAll('.fb[data-k]').forEach(b=>b.addEventListener('click',()=>applyFilter(b.dataset.k)));
-document.querySelectorAll('.fb[data-m]').forEach(b=>b.addEventListener('click',()=>applyFilter(b.dataset.m)));
-
-async function runPatient(rawAddr){
-  const statusEls=[document.getElementById('pat-status'),document.getElementById('pat-status-m')];
-  statusEls.forEach(el=>{el.style.display='block';el.innerHTML='<span style="color:#888">Searching for address...</span>';});
+async function runPat(addr,resId){
+  if(!addr.trim())return;
+  const el=document.getElementById(resId);
+  el.style.display='block';
+  el.className='pat-res searching';
+  el.textContent='Searching for address…';
   try{
-    const geo=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(rawAddr+', Maryland')}&format=json&limit=1&countrycodes=us`,{headers:{'Accept-Language':'en'}});
+    const geo=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(addr+' Maryland')+'&format=json&limit=1&countrycodes=us',{headers:{'Accept-Language':'en'}});
     const gd=await geo.json();
-    if(!gd.length){statusEls.forEach(el=>el.innerHTML='<span style="color:#c0392b">Address not found. Try adding a zip code.</span>');return;}
-    const {lat,lon,display_name}=gd[0];
-    const oLat=parseFloat(lat),oLng=parseFloat(lon);
-    statusEls.forEach(el=>el.innerHTML='<span style="color:#27AE60">&#10003; Found. Calculating distances...</span>');
+    if(!gd.length){el.className='pat-res err';el.textContent='Address not found — try adding a zip code';return;}
+    const oLat=parseFloat(gd[0].lat),oLng=parseFloat(gd[0].lon);
+    el.textContent='Calculating drive times to all 28 clinics…';
     const results=[];
-    await Promise.allSettled(Object.entries(C).map(async([nm,cd])=>{
+    await Promise.allSettled(Object.entries(CLINICS).map(async([nm,cd])=>{
       try{
-        const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${cd.lng},${cd.lat}?overview=false`,{signal:AbortSignal.timeout(5000)});
+        const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${cd.lng},${cd.lat}?overview=false`,{signal:AbortSignal.timeout(6000)});
         const d=await r.json();
         if(d.routes&&d.routes[0])results.push({name:nm,mins:Math.round(d.routes[0].duration/60)});
-        else throw new Error();
+        else throw 0;
       }catch{
         const dist=Math.sqrt(Math.pow(oLat-cd.lat,2)+Math.pow(oLng-cd.lng,2));
-        results.push({name:nm,mins:Math.round(dist*80)});
+        results.push({name:nm,mins:Math.round(dist*82)});
       }
     }));
     results.sort((a,b)=>a.mins-b.mins);
-    const rows=results.slice(0,8).map(r=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:.5px solid #f0f0f0"><span style="font-size:11px">${r.name}</span><span style="font-size:11px;font-weight:700;color:${gc(r.mins)}">${ms(r.mins)}</span></div>`).join('');
-    statusEls.forEach(el=>el.innerHTML=`<div style="font-size:10px;font-weight:700;color:#1A2980;margin:4px 0 2px">Nearest 8 clinics:</div>${rows}`);
+    const rows=results.slice(0,8).map(r=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:.5px solid #eee;font-size:11px"><span>${r.name}</span><span style="font-weight:700;color:${gc(r.mins)}">${ms(r.mins)}</span></div>`).join('');
+    el.className='pat-res';
+    el.innerHTML='<div style="font-size:10px;font-weight:700;margin-bottom:4px;color:#333">Nearest 8 clinics:</div>'+rows;
     if(patMk)map.removeLayer(patMk);
-    patMk=L.marker([oLat,oLng],{icon:L.divIcon({className:'',html:`<div style="background:#E74C3C;color:#fff;border-radius:16px;padding:4px 8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)">Patient</div>`,iconSize:[70,26],iconAnchor:[35,13]})}).addTo(map)
-      .bindPopup(`<div class="ph"><div class="ph-n">&#128100; Patient location</div><div class="ph-a">${display_name.split(',').slice(0,3).join(',')}</div></div><div class="pb"><b>Nearest clinic:</b> ${results[0].name} &mdash; ${ms(results[0].mins)}</div>`,{className:'lpop'}).openPopup();
+    patMk=L.marker([oLat,oLng],{icon:L.divIcon({className:'',html:`<div style="background:#E74C3C;color:#fff;border-radius:16px;padding:5px 10px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)">&#128100; Patient</div>`,iconSize:[90,28],iconAnchor:[45,14]})}).addTo(map)
+      .bindPopup(`<div class="pu-hdr"><div class="pu-name">&#128100; Patient location</div><div class="pu-addr">${gd[0].display_name.split(',').slice(0,3).join(',')}</div></div><div class="pu-body"><b>Nearest clinic:</b> ${results[0].name} &mdash; ${ms(results[0].mins)}</div>`,{className:'spbpop'}).openPopup();
     map.setView([oLat,oLng],10);
-  }catch(e){statusEls.forEach(el=>el.innerHTML='<span style="color:#c0392b">Could not find address. Try again.</span>');}
+  }catch{el.className='pat-res err';el.textContent='Could not look up that address. Please try again.';}
 }
-
-window.patGo=function(){const v=document.getElementById('pat-addr').value.trim();if(v)runPatient(v);};
-window.patGoM=function(){const v=document.getElementById('pat-addr-m').value.trim();if(v)runPatient(v);};
-['pat-addr','pat-addr-m'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();id==='pat-addr'?patGo():patGoM();}}));
 
 let sheetOpen=false;
 window.sheetToggle=function(){sheetOpen=!sheetOpen;document.getElementById('sheet').classList.toggle('up',sheetOpen);};
 window.sheetClose=function(){sheetOpen=false;document.getElementById('sheet').classList.remove('up');};
 map.on('click',()=>{if(sheetOpen)sheetClose();});
+
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  const b=document.getElementById('a2hs');
+  if(b)b.style.display='flex';
+});
+document.getElementById('a2hs-install')?.addEventListener('click',async()=>{
+  if(deferredPrompt){deferredPrompt.prompt();const r=await deferredPrompt.userChoice;deferredPrompt=null;dismissA2HS();}
+});
+window.dismissA2HS=function(){const b=document.getElementById('a2hs');if(b)b.style.display='none';};
+
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+if(isIOS&&!isStandalone){
+  const b=document.getElementById('a2hs');
+  if(b){
+    b.style.display='flex';
+    b.querySelector('#a2hs-install').textContent='How to add';
+    b.querySelector('#a2hs-install').onclick=()=>{
+      alert('To add to your home screen:\n\n1. Tap the Share button (box with arrow) at the bottom of Safari\n2. Scroll down and tap \"Add to Home Screen\"\n3. Tap \"Add\" in the top right');
+    };
+  }
+}
 </script>
 </body>
 </html>
